@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chocolate</title>
+    
+    <style>
+    /*sahnenin ekranda ortalanması için gerekli stil kodları*/
+        body {
+            margin: 0;
+            display: grid;
+            place-items: center; 
+            height: 100vh;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="chocolate" width="1600" height="900"></canvas>
+    <script>
+        var canvas = document.getElementById("chocolate");
+        var context = canvas.getContext("2d");
+
+        // Arka plan tasarımı ve oyuncu için gerekli değişkenlerin tanımlanıp dosya yollarının atanması
+        var bg = new Image();
+        var turn1 = new Image();
+        var turn2 = new Image();
+        var turn3 = new Image();        
+        var player = new Image();   
+
+        bg.src = "acik_arka.jpeg"
+        turn1.src = turn2.src = turn3.src = "donen_acik.jpeg"
+        player.src = "karakter.jpeg";
+
+        // Parkur için gerekli dikdörtgenlerin koordinat, boyut ve renk bilgilerini tutmak için dizi
+        var rects = [
+            {x: 0, y: 400, width: 225, height: 500, color: "#8c5b3f"},
+            {x: 375, y: 300, width: 200, height: 75, color: "#8c5b3f"},
+            {x: 350, y: 600, width: 400, height: 75, color: "#8c5b3f"},
+            {x: 825, y: 450, width: 300, height: 75, color: "#8c5b3f"},
+            {x: 1175, y: 670, width: 225, height: 80, color: "#8c5b3f"},
+            {x: 1175, y: 750, width: 80, height: 150, color: "#8c5b3f"},
+            {x: 1520, y: 740, width: 80, height: 80, color: "#8c5b3f"},
+            {x: 1440, y: 820, width: 160, height: 80, color: "#8c5b3f"}
+        ];
+
+        // Arka plan deseni için olan resimlerin koordinat, boyut ve dosya yolu bilgilerini tutmak için dizi
+        var turners = [
+            {x: 300, y: 250, width: 75, height: 150, img: new Image()},
+            {x: 1175, y: 150, width: 75, height: 150, img: new Image()},
+            {x: 750, y: 700, width: 75, height: 150, img: new Image()}
+        ];
+
+        turners[0].img.src = "donen_acik.jpeg";
+        turners[1].img.src = "donen_acik.jpeg";
+        turners[2].img.src = "donen_acik.jpeg";
+
+        bg.onload = function(){
+            context.drawImage(bg, 0, 0, canvas.width, canvas.height);
+
+            turners.forEach(function(turn){
+                context.drawImage(turn.img, turn.x, turn.y, turn.width, turn.height);
+            });
+
+            rects.forEach(function(rect) {
+                context.fillStyle = rect.color;
+                context.fillRect(rect.x, rect.y, rect.width, rect.height);
+            });
+
+            context.drawImage(player, 30, 350, 50, 50);
+        };
+
+    </script>
+</body>
+</html>
