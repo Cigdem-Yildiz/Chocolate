@@ -10,17 +10,19 @@
         body {
             margin: 0;
             overflow: hidden;
+            background-color: #23140e;
             display: grid;
             place-items: center; 
             height: 100vh;
+            width: 100vw;
         }
     </style>
 </head>
 <body>
-    <canvas id="chocolate" width="1600" height="900"></canvas>
+    <canvas id="chocolate"></canvas>
     <script>
-        var canvas = document.getElementById("chocolate");
-        var context = canvas.getContext("2d");
+        const canvas = document.getElementById("chocolate");
+        const context = canvas.getContext("2d");
 
         // Arka plan tasarımı ve oyuncu için gerekli değişkenlerin tanımlanıp dosya yollarının atanması
         var bg = new Image();
@@ -31,22 +33,18 @@
         const BASE_HEIGHT = 900;
 
         let scale = 1;
-        let offsetX = 0;
-        let offsetY = 0;
-
         let player_x = 30;
         let player_y = 350;
 
         function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+            const padding = 0.9;
 
-            const scaleX = canvas.width / BASE_WIDTH;
-            const scaleY = canvas.height / BASE_HEIGHT;
+            const scaleX = (window.innerWidth * padding) / BASE_WIDTH;
+            const scaleY = (window.innerHeight * padding) / BASE_HEIGHT;
             scale = Math.min(scaleX, scaleY); 
 
-            offsetX = (canvas.width - (BASE_WIDTH * scale)) / 2;
-            offsetY = (canvas.height - (BASE_HEIGHT * scale)) / 2;
+            canvas.width = BASE_WIDTH * scale;
+            canvas.height = BASE_HEIGHT * scale;
 
             draw();
         }
@@ -91,11 +89,8 @@
         turner.src = "images/donen_acik.jpeg";
 
         function draw(){
-            context.setTransform(1, 0, 0, 1, 0, 0);
-            context.clearRect(0, 0, canvas.width, canvas.height);
-
-            context.translate(offsetX, offsetY);
-            context.scale(scale, scale);
+            context.setTransform(scale, 0, 0, scale, 0, 0);
+            context.clearRect(0, 0, BASE_WIDTH, BASE_HEIGHT);
 
             context.drawImage(bg, 0, 0, BASE_WIDTH, BASE_HEIGHT);
 
