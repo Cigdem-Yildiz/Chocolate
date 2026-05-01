@@ -9,6 +9,7 @@
     /*sahnenin ekranda ortalanması için gerekli stil kodları*/
         body {
             margin: 0;
+            overflow: hidden;
             display: grid;
             place-items: center; 
             height: 100vh;
@@ -23,14 +24,34 @@
 
         // Arka plan tasarımı ve oyuncu için gerekli değişkenlerin tanımlanıp dosya yollarının atanması
         var bg = new Image();
-        var turn1 = new Image();
-        var turn2 = new Image();
-        var turn3 = new Image();        
+        var turner = new Image();     
         var player = new Image();   
 
-        bg.src = "acik_arka.jpeg"
-        turn1.src = turn2.src = turn3.src = "donen_acik.jpeg"
-        player.src = "karakter.jpeg";
+        const BASE_WIDTH = 1600;
+        const BASE_HEIGHT = 900;
+
+        let scale = 1;
+        let offsetX = 0;
+        let offsetY = 0;
+
+        let player_x = 30;
+        let player_y = 350;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const scaleX = canvas.width / BASE_WIDTH;
+            const scaleY = canvas.height / BASE_HEIGHT;
+            scale = Math.min(scaleX, scaleY); 
+
+            offsetX = (canvas.width - (BASE_WIDTH * scale)) / 2;
+            offsetY = (canvas.height - (BASE_HEIGHT * scale)) / 2;
+
+            draw();
+        }
+
+        window.addEventListener('resize', resizeCanvas);
 
         // Parkur için gerekli dikdörtgenlerin koordinat, boyut ve renk bilgilerini tutmak için dizi
         var rects = [
@@ -46,20 +67,40 @@
 
         // Arka plan deseni için olan resimlerin koordinat, boyut ve dosya yolu bilgilerini tutmak için dizi
         var turners = [
-            {x: 300, y: 250, width: 75, height: 150, img: new Image()},
-            {x: 1175, y: 150, width: 75, height: 150, img: new Image()},
-            {x: 750, y: 700, width: 75, height: 150, img: new Image()}
+            {x: 300, y: 250, width: 75, height: 150},
+            {x: 1175, y: 150, width: 75, height: 150},
+            {x: 750, y: 700, width: 75, height: 150}
         ];
 
-        turners[0].img.src = "donen_acik.jpeg";
-        turners[1].img.src = "donen_acik.jpeg";
-        turners[2].img.src = "donen_acik.jpeg";
+        var loadedImages = 0;
+        var totalImages = 3;
 
-        bg.onload = function(){
-            context.drawImage(bg, 0, 0, canvas.width, canvas.height);
+        function imageLoaded() {
+            loadedImages++;
+            if (loadedImages === totalImages) {
+                resizeCanvas(); // Tüm resimler yüklenince çizime başla
+            }
+        }
+
+        bg.onload = imageLoaded;
+        player.onload = imageLoaded;
+        turner.onload = imageLoaded;
+        
+        bg.src = "images/acik_arka.jpeg"
+        player.src = "images/karakter.png";
+        turner.src = "images/donen_acik.jpeg";
+
+        function draw(){
+            context.setTransform(1, 0, 0, 1, 0, 0);
+            context.clearRect(0, 0, canvas.width, canvas.height);
+
+            context.translate(offsetX, offsetY);
+            context.scale(scale, scale);
+
+            context.drawImage(bg, 0, 0, BASE_WIDTH, BASE_HEIGHT);
 
             turners.forEach(function(turn){
-                context.drawImage(turn.img, turn.x, turn.y, turn.width, turn.height);
+                context.drawImage(turner, turn.x, turn.y, turn.width, turn.height);
             });
 
             rects.forEach(function(rect) {
@@ -67,8 +108,8 @@
                 context.fillRect(rect.x, rect.y, rect.width, rect.height);
             });
 
-            context.drawImage(player, 30, 350, 50, 50);
-        };
+            context.drawImage(player, player_x, player_y, 50, 50);
+        }
 
     </script>
 </body>
