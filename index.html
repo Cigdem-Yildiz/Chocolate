@@ -27,14 +27,19 @@
         // Arka plan tasarımı ve oyuncu için gerekli değişkenlerin tanımlanıp dosya yollarının atanması
         var bg = new Image();
         var turner = new Image();     
-        var player = new Image();   
+        var playerImg = new Image();   
 
         const BASE_WIDTH = 1600;
         const BASE_HEIGHT = 900;
 
         let scale = 1;
-        let player_x = 30;
-        let player_y = 350;
+        var player = {
+            x: 30,
+            y: 350,
+            width: 50,
+            height: 50,
+            speed: 7
+        };
 
         function resizeCanvas() {
             const padding = 0.9;
@@ -71,6 +76,46 @@
             {x: 750, y: 700, width: 75, height: 150}
         ];
 
+        var game_part = 1;
+        const gravity = 3;
+
+        var ghost_list = [];
+        var recorded_path = [
+            {x: player.x, y: player.y}
+        ];
+
+        var right = false;
+        var left = false;
+        var up = false;
+
+        window.addEventListener("keydown", function(key){
+            if(key.code === "KeyD" || key.code === "ArrowRight")
+                right = true;
+            if(key.code === "KeyA" || key.code === "ArrowLeft")
+                left = true;
+            if(key.code === "KeyW" || key.code === "ArrowUp")
+                up = true;
+        });
+
+        window.addEventListener("keyup", function(key){
+            if(key.code === "KeyD" || key.code === "ArrowRight")
+                right = false;
+            if(key.code === "KeyA" || key.code === "ArrowLeft")
+                left = false;
+            if(key.code === "KeyW" || key.code === "ArrowUp")
+                up = false;
+        });
+
+        function move(){
+            if(right)
+                player.x += player.speed;
+            if(left)
+                player.x -= player.speed;
+            if(up)
+                player.y -= player.speed;
+            
+        }
+
         var loadedImages = 0;
         var totalImages = 3;
 
@@ -78,15 +123,16 @@
             loadedImages++;
             if (loadedImages === totalImages) {
                 resizeCanvas(); // Tüm resimler yüklenince çizime başla
+                gecici();
             }
         }
 
         bg.onload = imageLoaded;
-        player.onload = imageLoaded;
+        playerImg.onload = imageLoaded;
         turner.onload = imageLoaded;
         
         bg.src = "images/acik_arka.jpeg"
-        player.src = "images/karakter.png";
+        playerImg.src = "images/karakter.png";
         turner.src = "images/donen_acik.jpeg";
 
         function draw(){
@@ -104,7 +150,15 @@
                 context.fillRect(rect.x, rect.y, rect.width, rect.height);
             });
 
-            context.drawImage(player, player_x, player_y, 50, 50);
+            context.drawImage(playerImg, player.x, player.y, player.width, player.height);
+        }
+
+        // deneme fonksiyonu
+        function gecici(){
+            draw();
+            move();
+            
+            requestAnimationFrame(gecici);
         }
 
     </script>
