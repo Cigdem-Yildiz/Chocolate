@@ -38,7 +38,9 @@
             y: 350,
             width: 50,
             height: 50,
-            speed: 7
+            vx: 10,
+            vy: 0, 
+            onGround: false
         };
 
         function resizeCanvas() {
@@ -61,7 +63,7 @@
             {x: 0, y: 400, width: 225, height: 500, color: "#8c5b3f"},
             {x: 375, y: 300, width: 200, height: 75, color: "#8c5b3f"},
             {x: 350, y: 600, width: 400, height: 75, color: "#8c5b3f"},
-            {x: 825, y: 450, width: 300, height: 75, color: "#8c5b3f"},
+            {x: 825, y: 475, width: 300, height: 75, color: "#8c5b3f"},
             {x: 1175, y: 670, width: 225, height: 80, color: "#8c5b3f"},
             {x: 1175, y: 750, width: 80, height: 150, color: "#8c5b3f"},
             {x: 1520, y: 740, width: 80, height: 80, color: "#8c5b3f"},
@@ -73,7 +75,7 @@
         var turners = [
             {x: 300, y: 250, width: 75, height: 150},
             {x: 1175, y: 150, width: 75, height: 150},
-            {x: 750, y: 700, width: 75, height: 150}
+            {x: 700, y: 650, width: 75, height: 150}
         ];
 
         var game_part = 1;
@@ -106,14 +108,55 @@
                 up = false;
         });
 
-        function move(){
-            if(right)
-                player.x += player.speed;
-            if(left)
-                player.x -= player.speed;
-            if(up)
-                player.y -= player.speed;
-            
+        // Karakter dikdrtgenlerin içine girdi mi kontrolü
+        function checkCollision(p, r) {
+            return p.x < r.x + r.width &&
+                p.x + p.width > r.x &&
+                p.y < r.y + r.height &&
+                p.y + p.height > r.y;
+        }
+
+        function move() {
+            if (right) player.x += player.vx;
+            if (left) player.x -= player.vx;
+
+            rects.forEach(function(rect) {
+                if (checkCollision(player, rect)) {
+                    // Eğer sağa doğru gidilerken duvar içine girilirse o kenarına hizala
+                    if (right) { 
+                        player.x = rect.x - player.width;
+                    } 
+                    // Eğer sola doğru gidilerken duvar içine girilirse o kenarına hizala
+                    else if (left) { 
+                        player.x = rect.x + rect.width;
+                    }
+                }
+            });
+
+            player.vy += gravity;
+            player.y += player.vy;
+            player.onGround = false;
+
+            rects.forEach(function(rect) {
+                if (checkCollision(player, rect)) {
+                    // Aşağı düşerken duvar yüzeyine gelirse dur, yerde olduğunu değişkene bildir
+                    if (player.vy > 0) { 
+                        player.y = rect.y - player.height;
+                        player.vy = 0;                    
+                        player.onGround = true;          
+                    } 
+                    // Zıplarken duvarın alt kenarına çarpılırsa hızı sıfırla
+                    else if (player.vy < 0) { 
+                        player.y = rect.y + rect.height;  
+                        player.vy = 0;                  
+                    }
+                }
+            });
+
+            if (up && player.onGround) {
+                player.vy = -30;
+                player.onGround = false;
+            }
         }
 
         var loadedImages = 0;
@@ -135,14 +178,20 @@
         playerImg.src = "images/karakter.png";
         turner.src = "images/donen_acik.jpeg";
 
+        let angle = 0;
         function draw(){
             context.setTransform(scale, 0, 0, scale, 0, 0);
             context.clearRect(0, 0, BASE_WIDTH, BASE_HEIGHT);
 
             context.drawImage(bg, 0, 0, BASE_WIDTH, BASE_HEIGHT);
 
+            // Arka plandaki çikolataların merkez noktalarından dönmeleri için yazılan kısım
             turners.forEach(function(turn){
-                context.drawImage(turner, turn.x, turn.y, turn.width, turn.height);
+                context.save();
+                context.translate(turn.x + turn.width/2, turn.y + turn.height/2);
+                context.rotate(angle);
+                context.drawImage(turner, -turn.width/2, -turn.height/2, turn.width, turn.height);
+                context.restore();
             });
 
             rects.forEach(function(rect) {
@@ -151,6 +200,8 @@
             });
 
             context.drawImage(playerImg, player.x, player.y, player.width, player.height);
+
+            angle += 0.025;
         }
 
         // deneme fonksiyonu
