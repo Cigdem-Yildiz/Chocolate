@@ -27,15 +27,18 @@
         // Arka plan tasarımı ve oyuncu için gerekli değişkenlerin tanımlanıp dosya yollarının atanması
         var bg = new Image();
         var turner = new Image();     
-        var playerImg = new Image();   
+        var playerImg = new Image();  
+        var finishImg = new Image(); 
 
         const BASE_WIDTH = 1600;
         const BASE_HEIGHT = 900;
 
+        var start = {x: 30, y: 350};
+
         let scale = 1;
         var player = {
-            x: 30,
-            y: 350,
+            x: start.x,
+            y: start.y,
             width: 50,
             height: 50,
             vx: 10,
@@ -77,6 +80,8 @@
             {x: 1175, y: 150, width: 75, height: 150},
             {x: 700, y: 650, width: 75, height: 150}
         ];
+        
+        var finish = {x: 1270, y: 775, width: 100, height: 100};
 
         var game_part = 1;
         const gravity = 3;
@@ -117,8 +122,8 @@
         }
 
         function move() {
-            if (right) player.x += player.vx;
-            if (left) player.x -= player.vx;
+            if (right) (player.x + player.width === BASE_WIDTH) ? player.x = BASE_WIDTH - player.width : player.x += player.vx;
+            if (left) (player.x === 0) ? player.x = 0 : player.x -= player.vx;
 
             rects.forEach(function(rect) {
                 if (checkCollision(player, rect)) {
@@ -159,26 +164,51 @@
             }
         }
 
+        function finishControl(){
+            if(checkCollision(player, finish)){
+                game_part = 2;
+                player.x = start.x;
+                player.y = start.y;
+                console.log("1. part bitş");
+            }else{
+                recorded_path.push({x: player.x, y: player.y});
+                /* debug için
+                console.log(recorded_path[recorded_path.length-1].x + " " + recorded_path[recorded_path.length-1].y);
+                */
+            }
+        }
+
+        function fallControl(){
+            if(player.y >= BASE_HEIGHT) {
+                player.x = start.x;
+                player.y = start.y;
+                recorded_path.length = 0;
+            }
+        }
+
         var loadedImages = 0;
-        var totalImages = 3;
+        var totalImages = 4;
 
         function imageLoaded() {
             loadedImages++;
             if (loadedImages === totalImages) {
                 resizeCanvas(); // Tüm resimler yüklenince çizime başla
-                gecici();
+                gameLoop();
             }
         }
 
         bg.onload = imageLoaded;
         playerImg.onload = imageLoaded;
         turner.onload = imageLoaded;
+        finishImg.onload = imageLoaded;
         
         bg.src = "images/acik_arka.jpeg"
         playerImg.src = "images/karakter.png";
         turner.src = "images/donen_acik.jpeg";
+        finishImg.src = "images/bitis.png";
 
         let angle = 0;
+        let time = 0;
         function draw(){
             context.setTransform(scale, 0, 0, scale, 0, 0);
             context.clearRect(0, 0, BASE_WIDTH, BASE_HEIGHT);
@@ -199,17 +229,36 @@
                 context.fillRect(rect.x, rect.y, rect.width, rect.height);
             });
 
+            const scaleFinish = 1 + Math.abs(Math.sin(time)) * 0.35; 
+            context.save();
+            context.translate(finish.x + finish.width/2, finish.y + finish.height/2);
+            context.scale(scaleFinish, scaleFinish);
+            context.drawImage(finishImg, -finish.width/2, -finish.height/2, finish.width, finish.height);
+            context.restore();
+            time += 0.05;
+
             context.drawImage(playerImg, player.x, player.y, player.width, player.height);
 
             angle += 0.025;
         }
 
-        // deneme fonksiyonu
-        function gecici(){
-            draw();
+        function update1(){
             move();
+            finishControl();
+            fallControl();
+        }
+
+        function update2(){
             
-            requestAnimationFrame(gecici);
+        }
+
+        function gameLoop(){
+            if(game_part === 1) update1();
+            else if(game_part === 2) update2();
+
+            draw();
+        
+            requestAnimationFrame(gameLoop);
         }
 
     </script>
