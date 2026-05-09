@@ -29,6 +29,7 @@
         var turner = new Image();     
         var playerImg = new Image();  
         var finishImg = new Image(); 
+        var ghost_img = new Image();
 
         const BASE_WIDTH = 1600;
         const BASE_HEIGHT = 900;
@@ -45,6 +46,13 @@
             vy: 0, 
             onGround: false
         };
+        var ghost = {
+            x: 1320,
+            y: 825,
+            width: 50,
+            height: 50,
+            path_index: 0
+        }
 
         function resizeCanvas() {
             const padding = 0.9;
@@ -113,7 +121,7 @@
                 up = false;
         });
 
-        // Karakter dikdrtgenlerin içine girdi mi kontrolü
+        // İki nesne arasında temas kontrolü
         function checkCollision(p, r) {
             return p.x < r.x + r.width &&
                 p.x + p.width > r.x &&
@@ -158,31 +166,49 @@
                 }
             });
 
+            if(player.y >= BASE_HEIGHT) {
+                resetGame();
+            }
+
             if (up && player.onGround) {
                 player.vy = -30;
                 player.onGround = false;
             }
         }
 
+        function resetGame(){
+            game_part = 1;
+            recorded_path = [];
+            ghost_list = [];
+            player.x = start.x;
+            player.y = start.y;
+            player.vx = 10;
+            player.vy = 0;
+        }
+
         function finishControl(){
             if(checkCollision(player, finish)){
                 game_part = 2;
+                recorded_path.reverse();
+
+                let first_coord = recorded_path[0];
+                ghost_list.push({
+                    x: first_coord.x,
+                    y: first_coord.y,
+                    width: 50, 
+                    height: 50,
+                    path_index: 0
+                })
+
                 player.x = start.x;
                 player.y = start.y;
-                console.log("1. part bitş");
+                player.vy = 0;
+                // console.log("1. part bitş");
             }else{
                 recorded_path.push({x: player.x, y: player.y});
                 /* debug için
                 console.log(recorded_path[recorded_path.length-1].x + " " + recorded_path[recorded_path.length-1].y);
                 */
-            }
-        }
-
-        function fallControl(){
-            if(player.y >= BASE_HEIGHT) {
-                player.x = start.x;
-                player.y = start.y;
-                recorded_path.length = 0;
             }
         }
 
@@ -206,6 +232,7 @@
         playerImg.src = "images/karakter.png";
         turner.src = "images/donen_acik.jpeg";
         finishImg.src = "images/bitis.png";
+        ghost_img.src = "images/hayalet.png";
 
         let angle = 0;
         let time = 0;
@@ -237,6 +264,12 @@
             context.restore();
             time += 0.05;
 
+            if(game_part === 2){
+                ghost_list.forEach(function(ghost){
+                    context.drawImage(ghost_img, ghost.x, ghost.y, ghost.width, ghost.height);
+                });
+            }
+
             context.drawImage(playerImg, player.x, player.y, player.width, player.height);
 
             angle += 0.025;
@@ -245,11 +278,32 @@
         function update1(){
             move();
             finishControl();
-            fallControl();
         }
 
         function update2(){
-            
+            move();
+
+            if(game_part !== 2) return;
+
+            for(let i = ghost_list.length - 1; i >= 0; i--){
+                gh = ghost_list[0];
+
+                if(gh.path_index < recorded_path.length){
+                    var coordinat = recorded_path[gh.path_index];
+                    gh.x = coordinat.x;
+                    gh.y = coordinat.y;
+                    gh.path_index++;
+                }else{
+                    ghost_list.splice(i, 1);
+                    console.log("yol sonu");
+                    continue;
+                }
+
+                if(checkCollision(player, gh)){
+                    resetGame();
+                    return;
+                }
+            }
         }
 
         function gameLoop(){
