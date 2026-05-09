@@ -42,7 +42,7 @@
             y: start.y,
             width: 50,
             height: 50,
-            vx: 10,
+            vx: 9,
             vy: 0, 
             onGround: false
         };
@@ -130,8 +130,8 @@
         }
 
         function move() {
-            if (right) (player.x + player.width === BASE_WIDTH) ? player.x = BASE_WIDTH - player.width : player.x += player.vx;
-            if (left) (player.x === 0) ? player.x = 0 : player.x -= player.vx;
+            if (right) (player.x + player.width >= BASE_WIDTH) ? player.x = BASE_WIDTH - player.width : player.x += player.vx;
+            if (left) (player.x <= 0) ? player.x = 0 : player.x -= player.vx;
 
             rects.forEach(function(rect) {
                 if (checkCollision(player, rect)) {
@@ -177,17 +177,20 @@
         }
 
         function resetGame(){
+            console.log("reset");
             game_part = 1;
             recorded_path = [];
             ghost_list = [];
             player.x = start.x;
             player.y = start.y;
-            player.vx = 10;
+            player.vx = 9;
             player.vy = 0;
+            ghost_push_time = 0;
         }
 
         function finishControl(){
-            if(checkCollision(player, finish)){
+            if(game_part === 1){
+                if(checkCollision(player, finish)){
                 game_part = 2;
                 recorded_path.reverse();
 
@@ -204,22 +207,29 @@
                 player.y = start.y;
                 player.vy = 0;
                 // console.log("1. part bitş");
-            }else{
-                recorded_path.push({x: player.x, y: player.y});
-                /* debug için
-                console.log(recorded_path[recorded_path.length-1].x + " " + recorded_path[recorded_path.length-1].y);
-                */
-            }
+                }else{
+                    recorded_path.push({x: player.x, y: player.y});
+                    /* debug için
+                    console.log(recorded_path[recorded_path.length-1].x + " " + recorded_path[recorded_path.length-1].y);
+                    */
+                }
+            }else if(game_part === 2){
+                if(checkCollision(player, finish)){
+                    console.log("game over you WIN");
+                    resetGame();
+                }
+            }            
         }
 
         var loadedImages = 0;
         var totalImages = 4;
-
+        var is_loop_running = false;
         function imageLoaded() {
             loadedImages++;
-            if (loadedImages === totalImages) {
+            if (loadedImages === totalImages && !is_loop_running) {
+                is_loop_running = true;
                 resizeCanvas(); // Tüm resimler yüklenince çizime başla
-                gameLoop();
+                requestAnimationFrame(gameLoop);
             }
         }
 
@@ -280,13 +290,23 @@
             finishControl();
         }
 
+        var ghost_push_time = 0;
         function update2(){
             move();
+
+            ghost_push_time++;
+            if (ghost_push_time % 120 === 0) {
+                ghost_list.push({
+                    x: 0, y: 0, 
+                    width: 50, height: 50, 
+                    path_index: 0
+                });
+            }
 
             if(game_part !== 2) return;
 
             for(let i = ghost_list.length - 1; i >= 0; i--){
-                gh = ghost_list[0];
+                gh = ghost_list[i];
 
                 if(gh.path_index < recorded_path.length){
                     var coordinat = recorded_path[gh.path_index];
@@ -304,6 +324,8 @@
                     return;
                 }
             }
+
+            finishControl();
         }
 
         function gameLoop(){
