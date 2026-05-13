@@ -25,11 +25,15 @@
         const context = canvas.getContext("2d");
 
         // Arka plan tasarımı ve oyuncu için gerekli değişkenlerin tanımlanıp dosya yollarının atanması
-        var bg = new Image();
-        var turner = new Image();     
-        var playerImg = new Image();  
+        var bg_light = new Image();
+        var bg_dark = new Image();
+        var turner_light = new Image();     
+        var turner_dark = new Image();     
+        var player_img_r = new Image();  
+        var player_img_l = new Image();  
         var finishImg = new Image(); 
-        var ghost_img = new Image();
+        var ghost_img_r = new Image();
+        var ghost_img_l = new Image();
 
         const BASE_WIDTH = 1600;
         const BASE_HEIGHT = 900;
@@ -37,6 +41,7 @@
         var start = {x: 30, y: 350};
 
         let scale = 1;
+        // oyuncu nesnesinin özellikleri
         var player = {
             x: start.x,
             y: start.y,
@@ -44,16 +49,21 @@
             height: 50,
             vx: 9,
             vy: 0, 
-            onGround: false
+            onGround: false,
+            facing_right: true
         };
+
+        // hayalet nesnesinin özellikleri
         var ghost = {
             x: 1320,
             y: 825,
             width: 50,
             height: 50,
-            path_index: 0
+            path_index: 0,
+            g_facing_right: true
         }
 
+        // farklı boyuttaki ekranlar için oyun ekranını sabit tutmak için fonksiyon
         function resizeCanvas() {
             const padding = 0.9;
 
@@ -63,8 +73,6 @@
 
             canvas.width = BASE_WIDTH * scale;
             canvas.height = BASE_HEIGHT * scale;
-
-            draw();
         }
 
         window.addEventListener('resize', resizeCanvas);
@@ -88,15 +96,19 @@
             {x: 1175, y: 150, width: 75, height: 150},
             {x: 700, y: 650, width: 75, height: 150}
         ];
-        
+
+        // oyuncunun ulaşması gereken bitiş nesnesi
         var finish = {x: 1270, y: 775, width: 100, height: 100};
 
         var game_part = 1;
+
         const gravity = 3;
 
+        // 2. partta geri dönecek hayaletlerin listesi
         var ghost_list = [];
+        // hayaletlerin karakterin izlediği rotayı takip edebilmesi için koordinatların kaydedileceği liste
         var recorded_path = [
-            {x: player.x, y: player.y}
+            {x: start.x, y: start.y, facing_right: true}
         ];
 
         var right = false;
@@ -104,11 +116,13 @@
         var up = false;
 
         window.addEventListener("keydown", function(key){
-            if(key.code === "KeyD" || key.code === "ArrowRight")
+            if(key.code === "KeyD" || key.code === "ArrowRight"){
                 right = true;
-            if(key.code === "KeyA" || key.code === "ArrowLeft")
+                player.facing_right = true;
+            }if(key.code === "KeyA" || key.code === "ArrowLeft"){
                 left = true;
-            if(key.code === "KeyW" || key.code === "ArrowUp")
+                player.facing_right = false;
+            }if(key.code === "KeyW" || key.code === "ArrowUp")
                 up = true;
         });
 
@@ -129,9 +143,10 @@
                 p.y + p.height > r.y;
         }
 
-        function move() {
-            if (right) (player.x + player.width >= BASE_WIDTH) ? player.x = BASE_WIDTH - player.width : player.x += player.vx;
-            if (left) (player.x <= 0) ? player.x = 0 : player.x -= player.vx;
+        // oyuncunun x ve y eksenlerinde haraketlerinin mekaniği
+        function move(delta = 1) {
+            if (right) (player.x + player.width >= BASE_WIDTH) ? player.x = BASE_WIDTH - player.width : player.x += player.vx * delta;
+            if (left)  (player.x <= 0) ? player.x = 0 : player.x -= player.vx * delta;
 
             rects.forEach(function(rect) {
                 if (checkCollision(player, rect)) {
@@ -146,8 +161,8 @@
                 }
             });
 
-            player.vy += gravity;
-            player.y += player.vy;
+            player.vy += gravity * delta;
+            player.y += player.vy * delta;
             player.onGround = false;
 
             rects.forEach(function(rect) {
@@ -166,29 +181,37 @@
                 }
             });
 
+            // oyuncu düşerek ekranın dışına çıkarsa oyunu sıfırla
             if(player.y >= BASE_HEIGHT) {
                 resetGame();
             }
 
+            // oyuncu sadece yerdeyken zıplama tuşuna basılırsa zıplasın
             if (up && player.onGround) {
                 player.vy = -30;
                 player.onGround = false;
             }
         }
 
+        // oyunu başlangıç konumuna getirme
         function resetGame(){
-            console.log("reset");
             game_part = 1;
-            recorded_path = [];
+            recorded_path = [{x: start.x, y: start.y, facing_right: true}];
             ghost_list = [];
             player.x = start.x;
             player.y = start.y;
             player.vx = 9;
             player.vy = 0;
+            player.facing_right = true;
             ghost_push_time = 0;
         }
 
+        // 1. ve 2. part için oyuncunun tamamlama kontrolü
         function finishControl(){
+            /* 1. part tamamlandıysa hayaletlerin takip edeceği yol için karakterin takip ettiği yol ters çevrilir, 
+            part 1 tamamlnadığı anda ilk hayalet hayalet listesine eklenir. 
+            part 1 içindeyken bitiş nesnesine dokunulmadığı her an koordinatlar kaydedilir.
+            */
             if(game_part === 1){
                 if(checkCollision(player, finish)){
                 game_part = 2;
@@ -200,20 +223,23 @@
                     y: first_coord.y,
                     width: 50, 
                     height: 50,
-                    path_index: 0
+                    path_index: 0,
+                    g_facing_right: first_coord.facing_right
                 })
 
                 player.x = start.x;
                 player.y = start.y;
                 player.vy = 0;
-                // console.log("1. part bitş");
                 }else{
-                    recorded_path.push({x: player.x, y: player.y});
+                    recorded_path.push({x: player.x, y: player.y, facing_right: player.facing_right});
                     /* debug için
                     console.log(recorded_path[recorded_path.length-1].x + " " + recorded_path[recorded_path.length-1].y);
                     */
                 }
-            }else if(game_part === 2){
+            }
+            
+            /*2. part tamamlandığında kazanma yazısı gösterilir ve oyun sıfırlanır.*/
+            else if(game_part === 2){
                 if(checkCollision(player, finish)){
                     console.log("game over you WIN");
                     resetGame();
@@ -221,8 +247,9 @@
             }            
         }
 
+        // oyun ekranının bütün resimler yükledikten sonra çizilmesi için kontrol fonksiyonu
         var loadedImages = 0;
-        var totalImages = 4;
+        var totalImages = 9;
         var is_loop_running = false;
         function imageLoaded() {
             loadedImages++;
@@ -233,92 +260,119 @@
             }
         }
 
-        bg.onload = imageLoaded;
-        playerImg.onload = imageLoaded;
-        turner.onload = imageLoaded;
+        bg_light.onload = imageLoaded;
+        bg_dark.onload = imageLoaded;
+        player_img_r.onload = imageLoaded;
+        player_img_l.onload = imageLoaded;
+        turner_light.onload = imageLoaded;
+        turner_dark.onload = imageLoaded;
         finishImg.onload = imageLoaded;
+        ghost_img_r.onload = imageLoaded;
+        ghost_img_l.onload = imageLoaded;
         
-        bg.src = "images/acik_arka.jpeg"
-        playerImg.src = "images/karakter.png";
-        turner.src = "images/donen_acik.jpeg";
+        bg_light.src = "images/acik_arka.jpeg"
+        bg_dark.src = "/home/cigdemyildiz/Pictures/Screenshots/den2.png"
+        player_img_r.src = "images/karakter.png";
+        player_img_l.src = "images/karakter_sol.png";
+        turner_light.src = "images/donen_acik.jpeg";
+        turner_dark.src = "images/donen_koyu.jpeg";
         finishImg.src = "images/bitis.png";
-        ghost_img.src = "images/hayalet.png";
+        ghost_img_r.src = "images/hayalet.png";
+        ghost_img_l.src = "images/hayalet_sol.png";
 
         let angle = 0;
         let time = 0;
-        function draw(){
+        function draw(delta = 1){
+            // farklı ekranlarda aynı ebatta gözükmesi için ekranın ölçeklendirilmesi
             context.setTransform(scale, 0, 0, scale, 0, 0);
             context.clearRect(0, 0, BASE_WIDTH, BASE_HEIGHT);
 
-            context.drawImage(bg, 0, 0, BASE_WIDTH, BASE_HEIGHT);
+            let current_bg_img = (game_part === 1) ? bg_light : bg_dark;
+            context.drawImage(current_bg_img, 0, 0, BASE_WIDTH, BASE_HEIGHT);
 
+            let current_turner = (game_part === 1) ? turner_light : turner_dark;
             // Arka plandaki çikolataların merkez noktalarından dönmeleri için yazılan kısım
             turners.forEach(function(turn){
                 context.save();
                 context.translate(turn.x + turn.width/2, turn.y + turn.height/2);
                 context.rotate(angle);
-                context.drawImage(turner, -turn.width/2, -turn.height/2, turn.width, turn.height);
+                context.drawImage(current_turner, -turn.width/2, -turn.height/2, turn.width, turn.height);
                 context.restore();
             });
 
+            // parkurun çizilmesi
             rects.forEach(function(rect) {
-                context.fillStyle = rect.color;
+                context.fillStyle = (game_part === 1) ? "#8c5b3f" : "#845F4C";
                 context.fillRect(rect.x, rect.y, rect.width, rect.height);
             });
 
+            // bitiş nesnesinin zoom efektiyle çizilmesi
             const scaleFinish = 1 + Math.abs(Math.sin(time)) * 0.35; 
             context.save();
             context.translate(finish.x + finish.width/2, finish.y + finish.height/2);
             context.scale(scaleFinish, scaleFinish);
             context.drawImage(finishImg, -finish.width/2, -finish.height/2, finish.width, finish.height);
             context.restore();
-            time += 0.05;
+            time += 0.05 * delta;
 
             if(game_part === 2){
                 ghost_list.forEach(function(ghost){
-                    context.drawImage(ghost_img, ghost.x, ghost.y, ghost.width, ghost.height);
+                    let current_ghost_img = (ghost.g_facing_right) ? ghost_img_r : ghost_img_l;
+                    context.drawImage(current_ghost_img, ghost.x, ghost.y, ghost.width, ghost.height);
                 });
             }
 
-            context.drawImage(playerImg, player.x, player.y, player.width, player.height);
-
-            angle += 0.025;
+            // oyunucunun en üstte kalması için en sonda çizilmesi
+            let current_player_img = (player.facing_right) ? player_img_r : player_img_l;
+            context.drawImage(current_player_img, player.x, player.y, player.width, player.height);
+            
+            // oyun partına göre dönen nesnelerin yönünün ayarlanması
+            if(game_part === 1)
+                angle += 0.025 * delta;
+            else if(game_part === 2)
+                angle -= 0.025 *delta;
         }
 
-        function update1(){
-            move();
+        // 1. part için güncelleme fonksiyonu
+        function update1(delta){
+            move(delta);
             finishControl();
         }
 
+        // 2. part için güncelleme fonksiyonu
         var ghost_push_time = 0;
-        function update2(){
-            move();
+        function update2(delta){
+            move(delta);
 
+            // 2 saniyede bir hayalet oluşturulması
             ghost_push_time++;
             if (ghost_push_time % 120 === 0) {
                 ghost_list.push({
                     x: 0, y: 0, 
                     width: 50, height: 50, 
-                    path_index: 0
+                    path_index: 0,
+                    g_facing_right: true
                 });
             }
 
             if(game_part !== 2) return;
 
+            // hayalet listesindeki hayaletlerin recorded_path'i takip etmesi
             for(let i = ghost_list.length - 1; i >= 0; i--){
-                gh = ghost_list[i];
+                let gh = ghost_list[i];
 
                 if(gh.path_index < recorded_path.length){
                     var coordinat = recorded_path[gh.path_index];
                     gh.x = coordinat.x;
                     gh.y = coordinat.y;
                     gh.path_index++;
+                    gh.g_facing_right = coordinat.facing_right;
                 }else{
                     ghost_list.splice(i, 1);
-                    console.log("yol sonu");
                     continue;
                 }
 
+                // oyuncu hayaletle çarpıştıysa oyunu sıfırla
                 if(checkCollision(player, gh)){
                     resetGame();
                     return;
@@ -328,12 +382,19 @@
             finishControl();
         }
 
-        function gameLoop(){
-            if(game_part === 1) update1();
-            else if(game_part === 2) update2();
+        // oyunun genel döngüsü
+        let lastTime = null;
+        function gameLoop(timestamp){
+            if(lastTime === null) lastTime = timestamp;
 
-            draw();
-        
+            const delta = Math.min((timestamp - lastTime) / (1000/60), 3);
+            lastTime = timestamp;
+
+            if(game_part === 1) update1(delta);
+            else if(game_part === 2) update2(delta);
+
+            draw(delta);
+            
             requestAnimationFrame(gameLoop);
         }
 
