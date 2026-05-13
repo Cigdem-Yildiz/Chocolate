@@ -230,8 +230,8 @@
                 }
             });
 
+            player.y += (player.vy * delta) + (0.5 * gravity * delta * delta);
             player.vy += gravity * delta;
-            player.y += player.vy * delta;
             player.onGround = false;
 
             rects.forEach(function(rect) {
