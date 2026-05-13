@@ -438,14 +438,17 @@
             move(delta);
 
             // 2 saniyede bir hayalet oluşturulması
-            ghost_push_time++;
-            if (ghost_push_time % 120 === 0) {
+            let passed_time_ms = delta * (1000/60); 
+            ghost_push_time += passed_time_ms;
+
+            if (ghost_push_time >= 2000) {
                 ghost_list.push({
                     x: 0, y: 0, 
                     width: 50, height: 50, 
                     path_index: 0,
                     g_facing_right: true
                 });
+                ghost_push_time = 0; 
             }
 
             if(game_part !== 2) return;
