@@ -16,9 +16,44 @@
             height: 100vh;
             width: 100vw;
         }
+        #start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-image: url("images/giris_arka.jpeg"); 
+            background-size: cover; 
+            background-position: center; 
+            background-repeat: no-repeat; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10; 
+        }
+
+        #start-btn {
+            padding: 20px 50px;
+            font-size: 40px;
+            font-weight: bold;
+            color: rgb(104, 64, 40);
+            background-color: #ffffff;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s;
+        }
+
+        #start-btn:hover {
+            background-color: #A66E4E;
+            transform: scale(1.05); 
+        }
     </style>
 </head>
 <body>
+    <div id="start-screen">
+        <button id="start-btn">START</button>
+    </div>
     <canvas id="chocolate"></canvas>
     <script>
         const canvas = document.getElementById("chocolate");
@@ -34,6 +69,17 @@
         var finishImg = new Image(); 
         var ghost_img_r = new Image();
         var ghost_img_l = new Image();
+
+        // oyun müzik dosyalarının tanımlanması
+        var bg_music = new Audio("audio_files/arka.mp3");
+        bg_music.loop = true;
+        bg_music.volume = 0.2;
+
+        var jump_sound = new Audio("audio_files/ziplama.mp3");
+        jump_sound.volume = 0.7;
+
+        var lose_sound = new Audio("audio_files/kaybetme.mp3");
+        lose_sound.volume = 0.8;
 
         const BASE_WIDTH = 1600;
         const BASE_HEIGHT = 900;
@@ -101,6 +147,8 @@
         var finish = {x: 1270, y: 775, width: 100, height: 100};
 
         var game_part = 1;
+        
+        var time_left_ms = 10000;
 
         const gravity = 3;
 
@@ -115,7 +163,28 @@
         var left = false;
         var up = false;
 
+        var music_started = false;
+        var game_started = false;
+        var is_entrance = true;
+
+        const start_screen = document.getElementById("start-screen");
+        const start_btn = document.getElementById("start-btn");
+
+        start_btn.addEventListener("click", function() {
+            start_screen.style.display = "none"; 
+            is_entrance = false; 
+            
+            if(!music_started){
+                bg_music.play();
+                music_started = true;
+            }
+        });
+
         window.addEventListener("keydown", function(key){
+            if(is_entrance) return;
+
+            game_started = true;
+
             if(key.code === "KeyD" || key.code === "ArrowRight"){
                 right = true;
                 player.facing_right = true;
@@ -188,6 +257,9 @@
 
             // oyuncu sadece yerdeyken zıplama tuşuna basılırsa zıplasın
             if (up && player.onGround) {
+                jump_sound.currentTime = 0;
+                jump_sound.play();
+
                 player.vy = -30;
                 player.onGround = false;
             }
@@ -195,7 +267,11 @@
 
         // oyunu başlangıç konumuna getirme
         function resetGame(){
+            lose_sound.currentTime = 0;
+            lose_sound.play();
+
             game_part = 1;
+            time_left_ms = 10000;
             recorded_path = [{x: start.x, y: start.y, facing_right: true}];
             ghost_list = [];
             player.x = start.x;
@@ -204,6 +280,7 @@
             player.vy = 0;
             player.facing_right = true;
             ghost_push_time = 0;
+            game_started = false;
         }
 
         // 1. ve 2. part için oyuncunun tamamlama kontrolü
@@ -231,7 +308,9 @@
                 player.y = start.y;
                 player.vy = 0;
                 }else{
-                    recorded_path.push({x: player.x, y: player.y, facing_right: player.facing_right});
+                    if (game_started) {
+                        recorded_path.push({x: player.x, y: player.y, facing_right: player.facing_right});
+                    }
                     /* debug için
                     console.log(recorded_path[recorded_path.length-1].x + " " + recorded_path[recorded_path.length-1].y);
                     */
@@ -271,7 +350,7 @@
         ghost_img_l.onload = imageLoaded;
         
         bg_light.src = "images/acik_arka.jpeg"
-        bg_dark.src = "/home/cigdemyildiz/Pictures/Screenshots/den2.png"
+        bg_dark.src = "images/koyu_arka.png"
         player_img_r.src = "images/karakter.png";
         player_img_l.src = "images/karakter_sol.png";
         turner_light.src = "images/donen_acik.jpeg";
@@ -317,7 +396,7 @@
 
             if(game_part === 2){
                 ghost_list.forEach(function(ghost){
-                    let current_ghost_img = (ghost.g_facing_right) ? ghost_img_r : ghost_img_l;
+                    let current_ghost_img = (ghost.g_facing_right) ? ghost_img_l : ghost_img_r;
                     context.drawImage(current_ghost_img, ghost.x, ghost.y, ghost.width, ghost.height);
                 });
             }
@@ -326,6 +405,20 @@
             let current_player_img = (player.facing_right) ? player_img_r : player_img_l;
             context.drawImage(current_player_img, player.x, player.y, player.width, player.height);
             
+            let seconds = Math.floor(time_left_ms / 1000);
+            // Milisaniyeyi 2 haneli göstermek için 10a bölme
+            let milliseconds = Math.floor((time_left_ms % 1000) / 10); 
+
+            // Tek haneye düşüldüğünde başına 0 ekleme
+            let secStr = seconds < 10 ? "0" + seconds : seconds;
+            let milStr = milliseconds < 10 ? "0" + milliseconds : milliseconds;
+
+            // süre çizimi
+            context.fillStyle = (game_part === 1) ? "white" : "gray";
+            context.font = "bold 30px Arial";
+            context.textAlign = "right"; 
+            context.fillText(secStr + ":" + milStr, BASE_WIDTH - 30, 60);
+
             // oyun partına göre dönen nesnelerin yönünün ayarlanması
             if(game_part === 1)
                 angle += 0.025 * delta;
@@ -387,8 +480,19 @@
         function gameLoop(timestamp){
             if(lastTime === null) lastTime = timestamp;
 
-            const delta = Math.min((timestamp - lastTime) / (1000/60), 3);
+            let dt = timestamp - lastTime;
+
+            const delta = Math.min(dt / (1000/60), 3);
             lastTime = timestamp;
+
+            if (game_started && game_part === 1) {
+                time_left_ms -= dt;
+                
+                if (time_left_ms <= 0) {
+                    time_left_ms = 0;
+                    resetGame();
+                }
+            }
 
             if(game_part === 1) update1(delta);
             else if(game_part === 2) update2(delta);
