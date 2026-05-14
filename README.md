@@ -1,5 +1,6 @@
 # 🍫 Chocolate 🐈
 
+*Oyun Linki:* **[Chocolate](https://cigdem-yildiz.github.io/Chocolate/)** <br/>
 *Bu proje, FreezedIce tarafından geliştirilen **[RetroRift](https://freezedice.itch.io/retrorift)** oyunundan ilham alınarak tasarlanmıştır.*
 
 **Chocolate**, zamanı geri sarma mekaniklerine sahip web tabanlı bir 2D platform oyunudur. Küçük bir kedi olarak çikolatalı platformlarda zıplayarak bitiş noktasına ulaşın ve en büyük düşmanınızla, yani **kendi geçmişinizle** yüzleşin!
