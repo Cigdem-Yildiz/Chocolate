@@ -81,6 +81,9 @@
         var lose_sound = new Audio("audio_files/kaybetme.mp3");
         lose_sound.volume = 0.8;
 
+        var win_sound = new Audio("audio_files/kazanma.mp3");
+        win_sound.volume = 0.8;
+
         const BASE_WIDTH = 1600;
         const BASE_HEIGHT = 900;
 
@@ -266,9 +269,14 @@
         }
 
         // oyunu başlangıç konumuna getirme
-        function resetGame(){
-            lose_sound.currentTime = 0;
-            lose_sound.play();
+        function resetGame(you_win = false){
+            if (you_win) {
+                win_sound.currentTime = 0;
+                win_sound.play();
+            } else {
+                lose_sound.currentTime = 0;
+                lose_sound.play();
+            }
 
             game_part = 1;
             time_left_ms = 10000;
@@ -320,8 +328,7 @@
             /*2. part tamamlandığında kazanma yazısı gösterilir ve oyun sıfırlanır.*/
             else if(game_part === 2){
                 if(checkCollision(player, finish)){
-                    console.log("game over you WIN");
-                    resetGame();
+                    resetGame(true);
                 }
             }            
         }
