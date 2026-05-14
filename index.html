@@ -66,7 +66,7 @@
         var turner_dark = new Image();     
         var player_img_r = new Image();  
         var player_img_l = new Image();  
-        var finishImg = new Image(); 
+        var finish_img = new Image(); 
         var ghost_img_r = new Image();
         var ghost_img_l = new Image();
 
@@ -98,7 +98,7 @@
             height: 50,
             vx: 9,
             vy: 0, 
-            onGround: false,
+            on_ground: false,
             facing_right: true
         };
 
@@ -116,9 +116,9 @@
         function resizeCanvas() {
             const padding = 0.9;
 
-            const scaleX = (window.innerWidth * padding) / BASE_WIDTH;
-            const scaleY = (window.innerHeight * padding) / BASE_HEIGHT;
-            scale = Math.min(scaleX, scaleY); 
+            const scale_x = (window.innerWidth * padding) / BASE_WIDTH;
+            const scale_y = (window.innerHeight * padding) / BASE_HEIGHT;
+            scale = Math.min(scale_x, scale_y); 
 
             canvas.width = BASE_WIDTH * scale;
             canvas.height = BASE_HEIGHT * scale;
@@ -235,7 +235,7 @@
 
             player.y += (player.vy * delta) + (0.5 * gravity * delta * delta);
             player.vy += gravity * delta;
-            player.onGround = false;
+            player.on_ground = false;
 
             rects.forEach(function(rect) {
                 if (checkCollision(player, rect)) {
@@ -243,7 +243,7 @@
                     if (player.vy > 0) { 
                         player.y = rect.y - player.height;
                         player.vy = 0;                    
-                        player.onGround = true;          
+                        player.on_ground = true;          
                     } 
                     // Zıplarken duvarın alt kenarına çarpılırsa hızı sıfırla
                     else if (player.vy < 0) { 
@@ -259,12 +259,12 @@
             }
 
             // oyuncu sadece yerdeyken zıplama tuşuna basılırsa zıplasın
-            if (up && player.onGround) {
+            if (up && player.on_ground) {
                 jump_sound.currentTime = 0;
                 jump_sound.play();
 
                 player.vy = -30;
-                player.onGround = false;
+                player.on_ground = false;
             }
         }
 
@@ -334,12 +334,12 @@
         }
 
         // oyun ekranının bütün resimler yükledikten sonra çizilmesi için kontrol fonksiyonu
-        var loadedImages = 0;
-        var totalImages = 9;
+        var loaded_images = 0;
+        var total_images = 9;
         var is_loop_running = false;
         function imageLoaded() {
-            loadedImages++;
-            if (loadedImages === totalImages && !is_loop_running) {
+            loaded_images++;
+            if (loaded_images === total_images && !is_loop_running) {
                 is_loop_running = true;
                 resizeCanvas(); // Tüm resimler yüklenince çizime başla
                 requestAnimationFrame(gameLoop);
@@ -352,7 +352,7 @@
         player_img_l.onload = imageLoaded;
         turner_light.onload = imageLoaded;
         turner_dark.onload = imageLoaded;
-        finishImg.onload = imageLoaded;
+        finish_img.onload = imageLoaded;
         ghost_img_r.onload = imageLoaded;
         ghost_img_l.onload = imageLoaded;
         
@@ -362,7 +362,7 @@
         player_img_l.src = "images/karakter_sol.png";
         turner_light.src = "images/donen_acik.jpeg";
         turner_dark.src = "images/donen_koyu.jpeg";
-        finishImg.src = "images/bitis.png";
+        finish_img.src = "images/bitis.png";
         ghost_img_r.src = "images/hayalet.png";
         ghost_img_l.src = "images/hayalet_sol.png";
 
@@ -393,11 +393,11 @@
             });
 
             // bitiş nesnesinin zoom efektiyle çizilmesi
-            const scaleFinish = 1 + Math.abs(Math.sin(time)) * 0.35; 
+            const scale_finish = 1 + Math.abs(Math.sin(time)) * 0.35; 
             context.save();
             context.translate(finish.x + finish.width/2, finish.y + finish.height/2);
-            context.scale(scaleFinish, scaleFinish);
-            context.drawImage(finishImg, -finish.width/2, -finish.height/2, finish.width, finish.height);
+            context.scale(scale_finish, scale_finish);
+            context.drawImage(finish_img, -finish.width/2, -finish.height/2, finish.width, finish.height);
             context.restore();
             time += 0.05 * delta;
 
@@ -417,14 +417,14 @@
             let milliseconds = Math.floor((time_left_ms % 1000) / 10); 
 
             // Tek haneye düşüldüğünde başına 0 ekleme
-            let secStr = seconds < 10 ? "0" + seconds : seconds;
-            let milStr = milliseconds < 10 ? "0" + milliseconds : milliseconds;
+            let sec_str = seconds < 10 ? "0" + seconds : seconds;
+            let mil_str = milliseconds < 10 ? "0" + milliseconds : milliseconds;
 
             // süre çizimi
             context.fillStyle = (game_part === 1) ? "white" : "gray";
             context.font = "bold 30px Arial";
             context.textAlign = "right"; 
-            context.fillText(secStr + ":" + milStr, BASE_WIDTH - 30, 60);
+            context.fillText(sec_str + ":" + mil_str, BASE_WIDTH - 30, 60);
 
             // oyun partına göre dönen nesnelerin yönünün ayarlanması
             if(game_part === 1)
@@ -486,14 +486,14 @@
         }
 
         // oyunun genel döngüsü
-        let lastTime = null;
+        let last_time = null;
         function gameLoop(timestamp){
-            if(lastTime === null) lastTime = timestamp;
+            if(last_time === null) last_time = timestamp;
 
-            let dt = timestamp - lastTime;
+            let dt = timestamp - last_time;
 
             const delta = Math.min(dt / (1000/60), 3);
-            lastTime = timestamp;
+            last_time = timestamp;
 
             if (game_started && game_part === 1) {
                 time_left_ms -= dt;
